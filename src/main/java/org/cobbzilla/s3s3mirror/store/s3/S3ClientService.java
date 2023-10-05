@@ -2,6 +2,7 @@ package org.cobbzilla.s3s3mirror.store.s3;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ClientOptions;
 import org.cobbzilla.s3s3mirror.MirrorOptions;
@@ -31,7 +32,10 @@ public class S3ClientService {
                     .withProxyPort(options.getProxyPort());
         }
 
-        final AmazonS3Client client = new AmazonS3Client(options.getAwsCredentialProviders(), clientConfiguration);
+        AWSCredentialsProviderChain awsCredentialProviders = options.getAwsCredentialProviders();
+        if (awsCredentialProviders.getCredentials() == null)
+            throw new IllegalStateException("Failed to obtain AWS credentials.");
+        final AmazonS3Client client = new AmazonS3Client(awsCredentialProviders, clientConfiguration);
         if (options.hasEndpoint()) client.setEndpoint(options.getEndpoint());
         if (options.hasPathStyleAccess()) client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
 
