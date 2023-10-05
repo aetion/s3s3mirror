@@ -34,6 +34,7 @@ public class KeyLister implements Runnable {
 
         final ListRequest request = new ListRequest(bucket, prefix, fetchSize);
         listing = getFirstBatch(store, request);
+        context.getStats().listings.incrementAndGet();
         synchronized (summaries) {
             final List<FileSummary> objectSummaries = listing.getFileSummaries();
             summaries.addAll(objectSummaries);
@@ -53,6 +54,7 @@ public class KeyLister implements Runnable {
                 while (getSize() < maxQueueCapacity) {
                     if (listing.hasMore()) {
                         listing = getNextBatch();
+                        context.getStats().listings.incrementAndGet();
                         if (++counter % 100 == 0) context.getStats().logStats();
                         synchronized (summaries) {
                             final List<FileSummary> summaries = listing.getFileSummaries();
@@ -75,7 +77,7 @@ public class KeyLister implements Runnable {
             }
         } catch (Exception e) {
             log.error("Error in run loop, KeyLister thread now exiting: "+e);
-
+            context.getStats().listingsErrors.incrementAndGet();
         } finally {
             if (verbose) log.info("KeyLister run loop finished");
             done.set(true);
@@ -104,6 +106,7 @@ public class KeyLister implements Runnable {
                 }
             }
         }
+        context.getStats().listingsErrors.incrementAndGet();
         throw new IllegalStateException("getFirstBatch: error listing: "+lastException, lastException);
     }
 

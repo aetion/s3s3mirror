@@ -14,12 +14,14 @@ import static org.cobbzilla.s3s3mirror.MirrorConstants.*;
 
 @Slf4j
 public class MirrorStats {
+    public final AtomicLong listings = new AtomicLong(0);
+    public final AtomicLong listingsErrors = new AtomicLong(0);
     public final AtomicLong objectsRead = new AtomicLong(0);
     public final AtomicLong objectsCopied = new AtomicLong(0);
-    private final AtomicLong copyErrors = new AtomicLong(0);
+    public final AtomicLong copyErrors = new AtomicLong(0);
     public final AtomicLong objectsPut = new AtomicLong(0);
     public final AtomicLong objectsDeleted = new AtomicLong(0);
-    private final AtomicLong deleteErrors = new AtomicLong(0);
+    public final AtomicLong deleteErrors = new AtomicLong(0);
 
     public final AtomicLong s3copyCount = new AtomicLong(0);
     public final AtomicLong s3putCount = new AtomicLong(0);
@@ -54,6 +56,8 @@ public class MirrorStats {
         final double copyRate = (objectsCopied.get() + objectsPut.get()) / durationMinutes;
         final double deleteRate = objectsDeleted.get() / durationMinutes;
         return "read: "+objectsRead+ "\n"
+                + "listings: "+ listings +"\n"
+                + "listings errors: "+ listingsErrors +"\n"
                 + "copied: "+objectsCopied+"\n"
                 + "copy errors: "+copyErrors+"\n"
                 + "uploaded: "+objectsPut+"\n"
