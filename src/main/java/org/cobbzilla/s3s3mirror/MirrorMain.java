@@ -8,6 +8,7 @@ import lombok.Cleanup;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.cobbzilla.s3s3mirror.stats.MirrorStats;
 import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.BufferedReader;
@@ -45,7 +46,12 @@ public class MirrorMain {
 
     public void run() {
         init();
-        master.mirror();
+        MirrorStats stats = master.mirror();
+        if(stats.listingsErrors.get() > 0
+                || stats.deleteErrors.get() > 0
+                || stats.copyErrors.get() > 0){
+            System.exit(1);
+        }
     }
 
     public void init() {
