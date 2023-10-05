@@ -18,6 +18,7 @@ import org.kohsuke.args4j.Option;
 
 import java.io.File;
 import java.util.Date;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.cobbzilla.s3s3mirror.MirrorConstants.GB;
@@ -123,6 +124,18 @@ public class MirrorOptions implements AWSCredentials {
     @Getter @Setter private String endpoint = System.getenv().get(AWS_ENDPOINT);
 
     public boolean hasEndpoint () { return endpoint != null && endpoint.trim().length() > 0; }
+
+    public static final String AWS_USE_PATH_STYLE_ENDPOINT = "AWS_USE_PATH_STYLE_ENDPOINT";
+
+    public static final String USAGE_PATH_STYLE = "Access AWS endpoint using path style";
+    public static final String OPT_PATH_STYLE = "-pa";
+    public static final String LONGOPT_PATH_STYLE = "--path-style-access";
+    @Option(name=OPT_PATH_STYLE, aliases=LONGOPT_PATH_STYLE, usage=USAGE_PATH_STYLE)
+    @Getter @Setter private boolean pathStyleAccess = Optional.ofNullable(System.getenv(AWS_USE_PATH_STYLE_ENDPOINT))
+                        .map(Boolean::valueOf)
+                        .orElse(false);
+
+    public boolean hasPathStyleAccess () { return pathStyleAccess; }
 
     public static final String USAGE_MAX_CONNECTIONS = "Maximum number of connections to S3 (default 100)";
     public static final String OPT_MAX_CONNECTIONS = "-m";

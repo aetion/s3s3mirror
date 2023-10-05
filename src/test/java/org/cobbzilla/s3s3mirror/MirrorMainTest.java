@@ -105,6 +105,21 @@ public class MirrorMainTest {
         }
     }
 
+    @Test
+    public void testUsePathStyle () throws Exception {
+        MirrorMain main = new MirrorMain(new String[]{MirrorOptions.OPT_PATH_STYLE, SOURCE, DESTINATION});
+        main.getOptions().setAWSAccessKeyId("accessKey");
+        main.getOptions().setAWSSecretKey("secretKey");
+        main.parseArguments();
+        assertEquals(true, main.getOptions().hasPathStyleAccess());
+
+        main = new MirrorMain(new String[]{SOURCE, DESTINATION});
+        main.getOptions().setAWSAccessKeyId("accessKey");
+        main.getOptions().setAWSSecretKey("secretKey");
+        main.parseArguments();
+        assertEquals(false, main.getOptions().hasPathStyleAccess());
+    }
+
     private void testInvalidProxySetting(String proxy) throws Exception {
         final MirrorMain main = new MirrorMain(new String[]{MirrorOptions.OPT_PROXY, proxy, SOURCE, DESTINATION});
         main.getOptions().setAWSAccessKeyId("accessKey");

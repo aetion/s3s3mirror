@@ -3,6 +3,7 @@ package org.cobbzilla.s3s3mirror.store.s3;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ClientOptions;
 import org.cobbzilla.s3s3mirror.MirrorOptions;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +33,7 @@ public class S3ClientService {
 
         final AmazonS3Client client = new AmazonS3Client(options.getAwsCredentialProviders(), clientConfiguration);
         if (options.hasEndpoint()) client.setEndpoint(options.getEndpoint());
+        if (options.hasPathStyleAccess()) client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
 
         return client;
     }
