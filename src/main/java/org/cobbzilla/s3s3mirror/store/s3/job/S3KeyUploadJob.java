@@ -29,7 +29,7 @@ public class S3KeyUploadJob extends LocalKeyCopyJob {
         super(client, context, summary, notifyLock, comparisonStrategy);
     }
 
-    protected FileSummary getMetadata(String bucket, String key) throws Exception {
+    public FileSummary getMetadata(String bucket, String key) throws Exception {
         return S3FileListing.buildSummary(key, S3FileStore.getObjectMetadata(bucket, key, context, s3client));
     }
 
@@ -39,7 +39,7 @@ public class S3KeyUploadJob extends LocalKeyCopyJob {
         final MirrorStats stats = context.getStats();
 
         final File srcFile = LocalFileStore.getFile(options.getSourceBucket(), summary.getKey());
-        final PutObjectRequest request = new PutObjectRequest(options.getDestinationBucket(), getKeyDestination().replace("\\", "/"), srcFile);
+        final PutObjectRequest request = new PutObjectRequest(options.getDestinationBucket(), getDestination().replace("\\", "/"), srcFile);
         request.setMetadata(Sha256.getS3MetadataWithHash(srcFile));
         options.apply(request);
 

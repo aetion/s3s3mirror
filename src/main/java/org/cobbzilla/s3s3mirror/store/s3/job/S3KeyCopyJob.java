@@ -49,7 +49,7 @@ public class S3KeyCopyJob extends KeyCopyJob {
     }
 
     @Override
-    protected FileSummary getMetadata(String bucket, String key) throws Exception {
+    public FileSummary getMetadata(String bucket, String key) throws Exception {
         final ObjectMetadata metadata = getObjectMetadata(bucket, key);
         return metadata == null ? null : S3FileListing.buildSummary(key, metadata);
     }
@@ -60,7 +60,7 @@ public class S3KeyCopyJob extends KeyCopyJob {
         final MirrorOptions options = context.getOptions();
         final MirrorStats stats = context.getStats();
         final String key = summary.getKey();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         final ObjectMetadata sourceMetadata = getObjectMetadata(options.getSourceBucket(), key);
 

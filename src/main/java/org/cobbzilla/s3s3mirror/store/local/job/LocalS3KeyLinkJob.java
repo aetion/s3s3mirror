@@ -28,7 +28,7 @@ public class LocalS3KeyLinkJob extends S3KeyUploadJob {
         final ObjectMetadata redirectMetadata = new ObjectMetadata();
         redirectMetadata.setHeader("x-amz-website-redirect-location", summary.getKey());
         final PutObjectRequest request = new PutObjectRequest(options.getDestinationBucket(),
-                                                              getKeyDestination().replace("\\", "/"),
+                                                              getDestination().replace("\\", "/"),
                                                               DEV_NULL,
                                                               redirectMetadata);
         options.apply(request);

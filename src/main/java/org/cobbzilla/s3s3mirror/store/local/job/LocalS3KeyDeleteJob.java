@@ -21,7 +21,8 @@ public class LocalS3KeyDeleteJob extends S3KeyDeleteJob {
         super(S3ClientService.getS3Client(context.getOptions()), context, summary, notifyLock);
     }
 
-    @Override protected FileSummary getMetadata(String bucket, String key) throws Exception {
+    @Override
+    public FileSummary getMetadata(String bucket, String key) throws Exception {
         return LocalFileListing.buildSummary(LocalFileStore.getFile(bucket, key), bucket);
     }
 }

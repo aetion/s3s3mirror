@@ -20,7 +20,7 @@ public abstract class LocalKeyCopyJob extends KeyCopyJob {
     }
 
     @Override
-    protected FileSummary getMetadata(String bucket, String key) throws Exception {
+    public FileSummary getMetadata(String bucket, String key) throws Exception {
         return LocalFileListing.buildSummary(LocalFileStore.getFile(bucket, key), bucket);
     }
 

@@ -28,7 +28,7 @@ public class MultipartKeyCopyJob extends S3KeyCopyJob {
 
         final String key = summary.getKey();
         final long objectSize = summary.getSize();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         if (options.isVerbose()) log.info("Initiating multipart upload request for " + key);
 

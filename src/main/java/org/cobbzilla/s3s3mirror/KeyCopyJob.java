@@ -2,12 +2,10 @@ package org.cobbzilla.s3s3mirror;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cobbzilla.s3s3mirror.comparisonstrategies.ComparisonStrategy;
 import org.cobbzilla.s3s3mirror.store.FileSummary;
 import org.cobbzilla.s3s3mirror.store.s3.S3FileStore;
-import org.slf4j.Logger;
 
 @Slf4j
 public abstract class KeyCopyJob implements KeyJob {
@@ -18,7 +16,8 @@ public abstract class KeyCopyJob implements KeyJob {
     protected final Object notifyLock;
     protected final ComparisonStrategy comparisonStrategy;
 
-    @Getter protected String keyDestination;
+    protected String keySource;
+    protected String keyDestination;
 
     protected KeyCopyJob(AmazonS3Client s3client, MirrorContext context, FileSummary summary, Object notifyLock, ComparisonStrategy comparisonStrategy) {
         this.s3client = s3client;
@@ -27,17 +26,12 @@ public abstract class KeyCopyJob implements KeyJob {
         this.notifyLock = notifyLock;
         this.comparisonStrategy = comparisonStrategy;
 
+        keySource = summary.getKey();
         keyDestination = summary.getKey();
         final MirrorOptions options = context.getOptions();
-        if (!options.hasDestPrefix()
-                && options.hasPrefix()
-                && keyDestination.startsWith(options.getPrefix())
-                && keyDestination.length() > options.getPrefixLength()) {
-            keyDestination = keyDestination.substring(options.getPrefixLength());
-
-        } else if (options.hasDestPrefix()) {
-            keyDestination = keyDestination.substring(options.getPrefixLength());
-            keyDestination = options.getDestPrefix() + keyDestination;
+        if (options.hasPrefix()) {
+            String key_suffix = keySource.substring(options.getPrefixLength());
+            keyDestination = options.getDestPrefix() + key_suffix;
         }
         // If the destination is not local, ensure any windows separators are changed to S3 separators
         if (!FileStoreFactory.isLocalPath(options.getDestination())) {
@@ -49,9 +43,7 @@ public abstract class KeyCopyJob implements KeyJob {
         return S3FileStore.getObjectMetadata(bucket, key, context, s3client);
     }
 
-    protected abstract FileSummary getMetadata(String bucket, String key) throws Exception;
     protected abstract boolean copyFile() throws Exception;
-    protected abstract Logger getLog();
 
     @Override
     public void run() {
@@ -61,10 +53,10 @@ public abstract class KeyCopyJob implements KeyJob {
             if (!shouldTransfer()) return;
 
             if (options.isDryRun()) {
-                getLog().info("Would have copied " + key + " to destination: " + getKeyDestination());
+                getLog().info("Would have copied " + key + " to destination: " + getDestination());
             } else {
                 if (tryCopy()) {
-                    if (options.isVerbose()) getLog().info("successfully copied "+key+" -> "+getKeyDestination());
+                    if (options.isVerbose()) getLog().info("successfully copied "+key+" -> " + getDestination());
                     context.getStats().objectsCopied.incrementAndGet();
                 } else {
                     context.getStats().addErroredCopy(this);
@@ -87,7 +79,7 @@ public abstract class KeyCopyJob implements KeyJob {
         final boolean verbose = options.isVerbose();
         final int maxRetries = options.getMaxRetries();
         final String key = summary.getKey();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         for (int tries = 0; tries < maxRetries; tries++) {
             if (verbose) getLog().info("copying (try #" + tries + "): " + key + " to: " + keydest);
@@ -130,9 +122,9 @@ public abstract class KeyCopyJob implements KeyJob {
             }
         }
 
-        final FileSummary destination = getMetadata(options.getDestinationBucket(), getKeyDestination());
+        final FileSummary destination = getMetadata(options.getDestinationBucket(), getDestination());
         if (destination == null) {
-            if (verbose) getLog().info("shouldTransfer: destination key ("+getKeyDestination()+") does not exist, returning true");
+            if (verbose) getLog().info("shouldTransfer: destination key (" + getDestination() + ") does not exist, returning true");
             return true;
         }
 

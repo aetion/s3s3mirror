@@ -45,7 +45,7 @@ public class S3CopyToLocalJob extends LocalKeyCopyJob {
         final MirrorOptions options = context.getOptions();
         final MirrorStats stats = context.getStats();
         final String key = summary.getKey();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         final GetObjectRequest request = new GetObjectRequest(options.getSourceBucket(), key);
         final File destFile = LocalFileStore.getFileAndCreateParent(options.getDestinationBucket(), keydest);
