@@ -26,6 +26,7 @@ public class MirrorStats {
     public final AtomicLong deleteErrors = new AtomicLong(0);
 
     public final AtomicLong s3copyCount = new AtomicLong(0);
+    public final AtomicLong s3restoreCount = new AtomicLong(0);
     public final AtomicLong s3putCount = new AtomicLong(0);
     public final AtomicLong s3deleteCount = new AtomicLong(0);
     public final AtomicLong s3getCount = new AtomicLong(0);
@@ -73,6 +74,7 @@ public class MirrorStats {
                 + "bytes uploaded: "+formatBytes(bytesUploaded.get())+"\n"
                 + "GET operations: "+s3getCount+"\n"
                 + "COPY operations: "+ s3copyCount+"\n"
+                + "RESTORE operations: "+s3restoreCount+"\n"
                 + "PUT operations: "+ s3putCount+"\n"
                 + "DELETE operations: "+ s3deleteCount+"\n";
     }
@@ -119,6 +121,7 @@ public class MirrorStats {
         copied.copyErrors.set(copyErrors.get());
         copied.deleteErrors.set(deleteErrors.get());
         copied.s3copyCount.set(s3copyCount.get());
+        copied.s3restoreCount.set(s3restoreCount.get());
         copied.s3putCount.set(s3putCount.get());
         copied.s3deleteCount.set(s3deleteCount.get());
         copied.s3getCount.set(s3getCount.get());
@@ -144,6 +147,7 @@ public class MirrorStats {
         statsMap.put("objectsDeleted", String.valueOf(objectsDeleted.get()));
         statsMap.put("deleteErrors", String.valueOf(deleteErrors.get()));
         statsMap.put("s3copyCount", String.valueOf(s3copyCount.get()));
+        statsMap.put("s3restoreCount", String.valueOf(s3restoreCount.get()));
         statsMap.put("s3putCount", String.valueOf(s3putCount.get()));
         statsMap.put("s3deleteCount", String.valueOf(s3deleteCount.get()));
         statsMap.put("s3getCount", String.valueOf(s3getCount.get()));
