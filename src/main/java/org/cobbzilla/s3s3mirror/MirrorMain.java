@@ -59,6 +59,9 @@ public class MirrorMain {
 
     private static void writeStatistics(File output, MirrorStats stats) {
         try {
+            if(output.exists()) {
+                output.delete();
+            }
             new ObjectMapper().writeValue(output, stats.asStatsMap());
         } catch (Exception e) {
             log.error("Error writing statistics", e);

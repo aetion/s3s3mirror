@@ -173,6 +173,19 @@ public class MirrorOptions implements AWSCredentials {
     @Getter @Setter private File writeStats = null;
     public Optional<File> writeStats() { return Optional.ofNullable(writeStats); }
 
+    public static final String USAGE_INTELLIGENT_TIERING_RESTORE = "When enabled, if any of source keys with " +
+            "intelligent tiering enabled is archived, we will restore it and report in stats. " +
+            "Effectively having non 0 stats for restore means your sync was not 100% done, and restore was initiated. " +
+            "You should retry in some time and check if restore get down to 0. If not retry again in some time.";
+    public static final String OPT_INTELLIGENT_TIERING_RESTORE = "-itr";
+    public static final String LONGOPT_INTELLIGENT_TIERING_RESTORE = "--intelligent-tiering-restore";
+    @Option(
+            name=OPT_INTELLIGENT_TIERING_RESTORE,
+            aliases=LONGOPT_INTELLIGENT_TIERING_RESTORE,
+            usage=USAGE_INTELLIGENT_TIERING_RESTORE)
+    @Getter @Setter private boolean intelligentTieringRestore = false;
+    public boolean intelligentTieringRestore() { return intelligentTieringRestore; }
+
     private static final String PROXY_USAGE = "host:port of proxy server to use. " +
             "Defaults to proxy_host and proxy_port defined in ~/.s3cfg, or no proxy if these values are not found in ~/.s3cfg";
     public static final String OPT_PROXY = "-z";

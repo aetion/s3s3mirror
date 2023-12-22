@@ -1,10 +1,7 @@
 package org.cobbzilla.s3s3mirror.store.s3.job;
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AccessControlList;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.cobbzilla.s3s3mirror.KeyCopyJob;
 import org.cobbzilla.s3s3mirror.MirrorContext;
@@ -63,6 +60,10 @@ public class S3KeyCopyJob extends KeyCopyJob {
         final String keydest = getDestination();
 
         final ObjectMetadata sourceMetadata = getObjectMetadata(options.getSourceBucket(), key);
+        if (S3Restore.checkRestoreRequired(sourceMetadata, key, context, s3client)) {
+            // Restore was initiated or is still pending
+            return false;
+        }
 
         final CopyObjectRequest request = new CopyObjectRequest(options.getSourceBucket(), key, options.getDestinationBucket(), keydest);
         request.setNewObjectMetadata(sourceMetadata);
@@ -80,5 +81,6 @@ public class S3KeyCopyJob extends KeyCopyJob {
         stats.bytesCopied.addAndGet(sourceMetadata.getContentLength());
         return true;
     }
+
 
 }
