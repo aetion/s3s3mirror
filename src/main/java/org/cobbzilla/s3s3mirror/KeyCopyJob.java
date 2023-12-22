@@ -128,7 +128,11 @@ public abstract class KeyCopyJob implements KeyJob {
             return true;
         }
 
-        return comparisonStrategy.sourceDifferent(summary, destination);
+        boolean shouldTransfer = comparisonStrategy.sourceDifferent(summary, destination);
+        if (verbose) getLog().info(
+                "shouldTransfer: comparisonStrategy ("+comparisonStrategy.getClass().getSimpleName()+") " +
+                        "returned " + shouldTransfer + " for key: " + key);
+        return shouldTransfer;
     }
 
     @Override
