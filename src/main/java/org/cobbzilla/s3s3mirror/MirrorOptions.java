@@ -166,6 +166,13 @@ public class MirrorOptions implements AWSCredentials {
     @Getter @Setter private String ctime = null;
     public boolean hasCtime() { return ctime != null; }
 
+    public static final String USAGE_WRITE_STATS = "Writes s3 usage stats to the specified file in json format";
+    public static final String OPT_WRITE_STATS = "-ws";
+    public static final String LONGOPT_WRITE_STATS = "--write-stats";
+    @Option(name=OPT_WRITE_STATS, aliases=LONGOPT_WRITE_STATS, usage=USAGE_WRITE_STATS)
+    @Getter @Setter private File writeStats = null;
+    public Optional<File> writeStats() { return Optional.ofNullable(writeStats); }
+
     private static final String PROXY_USAGE = "host:port of proxy server to use. " +
             "Defaults to proxy_host and proxy_port defined in ~/.s3cfg, or no proxy if these values are not found in ~/.s3cfg";
     public static final String OPT_PROXY = "-z";

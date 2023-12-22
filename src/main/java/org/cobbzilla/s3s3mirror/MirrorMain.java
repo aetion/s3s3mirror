@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Cleanup;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,10 +48,20 @@ public class MirrorMain {
     public void run() {
         init();
         MirrorStats stats = master.mirror();
+        options.writeStats()
+                .ifPresent(f -> writeStatistics(f, stats));
         if(stats.listingsErrors.get() > 0
                 || stats.deleteErrors.get() > 0
                 || stats.copyErrors.get() > 0){
             System.exit(1);
+        }
+    }
+
+    private static void writeStatistics(File output, MirrorStats stats) {
+        try {
+            new ObjectMapper().writeValue(output, stats.asStatsMap());
+        } catch (Exception e) {
+            log.error("Error writing statistics", e);
         }
     }
 

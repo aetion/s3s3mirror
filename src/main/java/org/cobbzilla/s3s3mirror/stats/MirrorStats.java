@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cobbzilla.s3s3mirror.KeyJob;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -111,9 +113,9 @@ public class MirrorStats {
     public MirrorStats copy() {
         MirrorStats copied = new MirrorStats();
         copied.objectsRead.set(objectsRead.get());
+        copied.objectsPut.set(objectsPut.get());
         copied.objectsCopied.set(objectsCopied.get());
         copied.objectsDeleted.set(objectsDeleted.get());
-        copied.objectsPut.set(objectsPut.get());
         copied.copyErrors.set(copyErrors.get());
         copied.deleteErrors.set(deleteErrors.get());
         copied.s3copyCount.set(s3copyCount.get());
@@ -129,5 +131,24 @@ public class MirrorStats {
         copied.start = start;
 
         return copied;
+    }
+
+    public Map<String, String> asStatsMap(){
+        Map<String, String> statsMap = new HashMap<>();
+        statsMap.put("listings", String.valueOf(listings.get()));
+        statsMap.put("listingsErrors", String.valueOf(listingsErrors.get()));
+        statsMap.put("objectsRead", String.valueOf(objectsRead.get()));
+        statsMap.put("objectsCopied", String.valueOf(objectsCopied.get()));
+        statsMap.put("copyErrors", String.valueOf(copyErrors.get()));
+        statsMap.put("objectsPut", String.valueOf(objectsPut.get()));
+        statsMap.put("objectsDeleted", String.valueOf(objectsDeleted.get()));
+        statsMap.put("deleteErrors", String.valueOf(deleteErrors.get()));
+        statsMap.put("s3copyCount", String.valueOf(s3copyCount.get()));
+        statsMap.put("s3putCount", String.valueOf(s3putCount.get()));
+        statsMap.put("s3deleteCount", String.valueOf(s3deleteCount.get()));
+        statsMap.put("s3getCount", String.valueOf(s3getCount.get()));
+        statsMap.put("bytesCopied", String.valueOf(bytesCopied.get()));
+        statsMap.put("bytesUploaded", String.valueOf(bytesUploaded.get()));
+        return statsMap;
     }
 }
