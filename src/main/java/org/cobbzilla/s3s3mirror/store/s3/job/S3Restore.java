@@ -46,7 +46,7 @@ public class S3Restore {
             Optional<Boolean> ongoingRestore = Optional.ofNullable(sourceMetadata.getOngoingRestore());
             if(!ongoingRestore.orElse(false)){
                 s3client.restoreObjectV2(new RestoreObjectRequest(
-                        mirrorContext.getOptions().getSourceBucket(), key, 0));
+                        mirrorContext.getOptions().getSourceBucket(), key));
             }
             mirrorContext.getStats().s3restoreCount.incrementAndGet();
             return true;
