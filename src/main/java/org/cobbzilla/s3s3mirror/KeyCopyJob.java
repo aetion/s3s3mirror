@@ -27,11 +27,12 @@ public abstract class KeyCopyJob implements KeyJob {
         this.comparisonStrategy = comparisonStrategy;
 
         keySource = summary.getKey();
-        keyDestination = summary.getKey();
         final MirrorOptions options = context.getOptions();
-        if (options.hasPrefix()) {
-            String key_suffix = keySource.substring(options.getPrefixLength());
-            keyDestination = options.getDestPrefix() + key_suffix;
+        String keyWithoutPrefix = options.hasPrefix() ? keySource.substring(options.getPrefixLength()+1): summary.getKey();
+        if (options.hasDestPrefix()) {
+            keyDestination = options.getDestPrefix() + "/" + keyWithoutPrefix;
+        }else{
+            keyDestination = keyWithoutPrefix;
         }
         // If the destination is not local, ensure any windows separators are changed to S3 separators
         if (!FileStoreFactory.isLocalPath(options.getDestination())) {
