@@ -17,17 +17,17 @@ public class BucketAndPrefixTest {
             { "bucket1", null, "bucket1", null },
             { "bucket2/", null, "bucket2", null },
 
-            { "bucket3", "prefix", "bucket3", "prefix" },
-            { "bucket4/", "prefix", "bucket4", "prefix" },
+            { "bucket3", "/prefix", "bucket3", "/prefix" },
+            { "bucket4/", "/prefix", "bucket4", "/prefix" },
 
             { "bucket5/prefix", null, "bucket5", "prefix" },
-            { "bucket6/prefix/", null, "bucket6", "prefix/" },
+            { "bucket6/prefix/", null, "bucket6", "prefix" },
 
-            { "bucket7/prefix", "pre2", "bucket7", "prefixpre2" },
+            { "bucket7/prefix", "pre2", "bucket7", "prefix/pre2" },
             { "bucket8/prefix/", "pre2", "bucket8", "prefix/pre2" },
 
-            { "bucket9/prefix/pre2", "pre3/pre4", "bucket9", "prefix/pre2pre3/pre4" },
-            { "bucket10/prefix/pre2/", "pre3/pre4/", "bucket10", "prefix/pre2/pre3/pre4/" },
+            { "bucket9/prefix/pre2", "pre3/pre4", "bucket9", "prefix/pre2/pre3/pre4" },
+            { "bucket10/prefix/pre2/", "pre3/pre4/", "bucket10", "prefix/pre2/pre3/pre4" },
     };
 
     @Test
