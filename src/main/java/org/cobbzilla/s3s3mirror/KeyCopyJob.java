@@ -7,6 +7,8 @@ import org.cobbzilla.s3s3mirror.comparisonstrategies.ComparisonStrategy;
 import org.cobbzilla.s3s3mirror.store.FileSummary;
 import org.cobbzilla.s3s3mirror.store.s3.S3FileStore;
 
+import java.util.Optional;
+
 @Slf4j
 public abstract class KeyCopyJob implements KeyJob {
 
@@ -123,9 +125,15 @@ public abstract class KeyCopyJob implements KeyJob {
             }
         }
 
-        final FileSummary destination = getMetadata(options.getDestinationBucket(), getDestination());
+        String destinationKey = getDestination();
+        if (Optional.ofNullable(destinationKey)
+                .map(String::isEmpty)
+                .orElse(true)){
+            return false;
+        }
+        final FileSummary destination = getMetadata(options.getDestinationBucket(), destinationKey);
         if (destination == null) {
-            if (verbose) getLog().info("shouldTransfer: destination key (" + getDestination() + ") does not exist, returning true");
+            if (verbose) getLog().info("shouldTransfer: destination key (" + destinationKey + ") does not exist, returning true");
             return true;
         }
 
