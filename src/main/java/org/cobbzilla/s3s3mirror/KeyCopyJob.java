@@ -2,12 +2,12 @@ package org.cobbzilla.s3s3mirror;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cobbzilla.s3s3mirror.comparisonstrategies.ComparisonStrategy;
 import org.cobbzilla.s3s3mirror.store.FileSummary;
 import org.cobbzilla.s3s3mirror.store.s3.S3FileStore;
-import org.slf4j.Logger;
+
+import java.util.Optional;
 
 @Slf4j
 public abstract class KeyCopyJob implements KeyJob {
@@ -18,7 +18,8 @@ public abstract class KeyCopyJob implements KeyJob {
     protected final Object notifyLock;
     protected final ComparisonStrategy comparisonStrategy;
 
-    @Getter protected String keyDestination;
+    protected String keySource;
+    protected String keyDestination;
 
     protected KeyCopyJob(AmazonS3Client s3client, MirrorContext context, FileSummary summary, Object notifyLock, ComparisonStrategy comparisonStrategy) {
         this.s3client = s3client;
@@ -27,17 +28,13 @@ public abstract class KeyCopyJob implements KeyJob {
         this.notifyLock = notifyLock;
         this.comparisonStrategy = comparisonStrategy;
 
-        keyDestination = summary.getKey();
+        keySource = summary.getKey();
         final MirrorOptions options = context.getOptions();
-        if (!options.hasDestPrefix()
-                && options.hasPrefix()
-                && keyDestination.startsWith(options.getPrefix())
-                && keyDestination.length() > options.getPrefixLength()) {
-            keyDestination = keyDestination.substring(options.getPrefixLength());
-
-        } else if (options.hasDestPrefix()) {
-            keyDestination = keyDestination.substring(options.getPrefixLength());
-            keyDestination = options.getDestPrefix() + keyDestination;
+        String keyWithoutPrefix = options.hasPrefix() ? keySource.substring(options.getPrefixLength()+1): summary.getKey();
+        if (options.hasDestPrefix()) {
+            keyDestination = options.getDestPrefix() + "/" + keyWithoutPrefix;
+        }else{
+            keyDestination = keyWithoutPrefix;
         }
         // If the destination is not local, ensure any windows separators are changed to S3 separators
         if (!FileStoreFactory.isLocalPath(options.getDestination())) {
@@ -49,9 +46,7 @@ public abstract class KeyCopyJob implements KeyJob {
         return S3FileStore.getObjectMetadata(bucket, key, context, s3client);
     }
 
-    protected abstract FileSummary getMetadata(String bucket, String key) throws Exception;
     protected abstract boolean copyFile() throws Exception;
-    protected abstract Logger getLog();
 
     @Override
     public void run() {
@@ -61,10 +56,10 @@ public abstract class KeyCopyJob implements KeyJob {
             if (!shouldTransfer()) return;
 
             if (options.isDryRun()) {
-                getLog().info("Would have copied " + key + " to destination: " + getKeyDestination());
+                getLog().info("Would have copied " + key + " to destination: " + getDestination());
             } else {
                 if (tryCopy()) {
-                    if (options.isVerbose()) getLog().info("successfully copied "+key+" -> "+getKeyDestination());
+                    if (options.isVerbose()) getLog().info("successfully copied "+key+" -> " + getDestination());
                     context.getStats().objectsCopied.incrementAndGet();
                 } else {
                     context.getStats().addErroredCopy(this);
@@ -87,7 +82,7 @@ public abstract class KeyCopyJob implements KeyJob {
         final boolean verbose = options.isVerbose();
         final int maxRetries = options.getMaxRetries();
         final String key = summary.getKey();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         for (int tries = 0; tries < maxRetries; tries++) {
             if (verbose) getLog().info("copying (try #" + tries + "): " + key + " to: " + keydest);
@@ -130,13 +125,23 @@ public abstract class KeyCopyJob implements KeyJob {
             }
         }
 
-        final FileSummary destination = getMetadata(options.getDestinationBucket(), getKeyDestination());
+        String destinationKey = getDestination();
+        if (Optional.ofNullable(destinationKey)
+                .map(String::isEmpty)
+                .orElse(true)){
+            return false;
+        }
+        final FileSummary destination = getMetadata(options.getDestinationBucket(), destinationKey);
         if (destination == null) {
-            if (verbose) getLog().info("shouldTransfer: destination key ("+getKeyDestination()+") does not exist, returning true");
+            if (verbose) getLog().info("shouldTransfer: destination key (" + destinationKey + ") does not exist, returning true");
             return true;
         }
 
-        return comparisonStrategy.sourceDifferent(summary, destination);
+        boolean shouldTransfer = comparisonStrategy.sourceDifferent(summary, destination);
+        if (verbose) getLog().info(
+                "shouldTransfer: comparisonStrategy ("+comparisonStrategy.getClass().getSimpleName()+") " +
+                        "returned " + shouldTransfer + " for key: " + key);
+        return shouldTransfer;
     }
 
     @Override

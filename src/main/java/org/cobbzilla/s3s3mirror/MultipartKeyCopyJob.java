@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cobbzilla.s3s3mirror.comparisonstrategies.ComparisonStrategy;
 import org.cobbzilla.s3s3mirror.store.FileSummary;
 import org.cobbzilla.s3s3mirror.store.s3.job.S3KeyCopyJob;
+import org.cobbzilla.s3s3mirror.store.s3.job.S3Restore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +22,20 @@ public class MultipartKeyCopyJob extends S3KeyCopyJob {
     public boolean copyFile () throws Exception {
 
         final MirrorOptions options = context.getOptions();
+        final String key = summary.getKey();
         final String sourceBucket = options.getSourceBucket();
         final String destBucket = options.getDestinationBucket();
+
+        final ObjectMetadata sourceMetadata = getObjectMetadata(options.getSourceBucket(), key);
+        if (S3Restore.checkRestoreRequired(sourceMetadata, key, context, s3client)) {
+            // Restore was initiated or is still pending
+            return false;
+        }
+
         final List<CopyPartResult> copyResponses = new ArrayList<CopyPartResult>();
         final int maxPartRetries = options.getMaxRetries();
-
-        final String key = summary.getKey();
         final long objectSize = summary.getSize();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         if (options.isVerbose()) log.info("Initiating multipart upload request for " + key);
 

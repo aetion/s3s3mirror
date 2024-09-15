@@ -1,26 +1,46 @@
 package org.cobbzilla.s3s3mirror;
 
 import com.amazonaws.services.s3.AmazonS3Client;
+import lombok.Getter;
 import org.cobbzilla.s3s3mirror.stats.MirrorStats;
-import org.cobbzilla.s3s3mirror.comparisonstrategies.strategies.NoImplementationComparisonStrategy;
 import org.cobbzilla.s3s3mirror.store.FileSummary;
 
-public abstract class KeyDeleteJob extends KeyCopyJob {
+public abstract class KeyDeleteJob implements KeyJob {
 
-    private String keysrc;
+    protected AmazonS3Client s3client;
+    protected final MirrorContext context;
+    protected final FileSummary summary;
+    protected final Object notifyLock;
+
+    protected String keySource;
+    @Getter
+    protected String keyDestination;
 
     public KeyDeleteJob(AmazonS3Client client, MirrorContext context, FileSummary summary, Object notifyLock) {
-        super(client, context, summary, notifyLock, new NoImplementationComparisonStrategy());
+        this.s3client = client;
+        this.context = context;
+        this.summary = summary;
+        this.notifyLock = notifyLock;
+        this.keyDestination = summary.getKey();
 
         final MirrorOptions options = context.getOptions();
-        keysrc = summary.getKey(); // NOTE: summary.getKey is the key in the destination bucket
-        if (options.hasPrefix()) {
-            keysrc = keysrc.substring(options.getDestPrefixLength());
-            keysrc = options.getPrefix() + keyDestination;
+        if (options.hasDestPrefix()) {
+            // Note: in this case source file is as destination file from copy job.
+            // so we use dest prefix here.
+            String key_suffix = keyDestination.substring(options.getDestPrefixLength());
+            keySource = options.getPrefix() + key_suffix;
         }
     }
 
-    @Override protected boolean copyFile() throws Exception { throw new IllegalStateException("copyFile not supported"); }
+    @Override
+    public String getSource() {
+        return keySource;
+    }
+
+    @Override
+    public String getDestination() {
+        return keyDestination;
+    }
 
     protected abstract boolean deleteFile(String bucket, String key) throws Exception;
 
@@ -35,7 +55,7 @@ public abstract class KeyDeleteJob extends KeyCopyJob {
             if (!shouldDelete()) return;
 
             if (options.isDryRun()) {
-                getLog().info("Would have deleted "+key+" from destination because "+keysrc+" does not exist in source");
+                getLog().info("Would have deleted "+key+" from destination because "+ keySource +" does not exist in source");
             } else {
                 boolean deletedOK = false;
                 for (int tries=0; tries<maxRetries; tries++) {
@@ -80,13 +100,13 @@ public abstract class KeyDeleteJob extends KeyCopyJob {
 
         // Does it exist in the source bucket
         try {
-            final FileSummary metadata = getMetadata(options.getSourceBucket(), keysrc);
+            final FileSummary metadata = getMetadata(options.getSourceBucket(), keySource);
             if (metadata == null) {
-                if (options.isVerbose()) getLog().info("Key not found in source bucket (will delete from destination): " + keysrc);
+                if (options.isVerbose()) getLog().info("Key not found in source bucket (will delete from destination): " + keySource);
                 return true;
             }
         } catch (Exception e) {
-            getLog().warn("Error getting metadata for " + options.getSourceBucket() + "/" + keysrc + " (not deleting): " + e);
+            getLog().warn("Error getting metadata for " + options.getSourceBucket() + "/" + keySource + " (not deleting): " + e);
         }
         return false;
     }

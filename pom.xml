@@ -23,8 +23,8 @@
     </licenses>
 
     <properties>
-        <org.slf4j.version>1.7.30</org.slf4j.version>
-        <junit.version>4.13.1</junit.version>
+        <org.slf4j.version>2.0.7</org.slf4j.version>
+        <junit.version>4.13.2</junit.version>
     </properties>
 
     <dependencies>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.14.0</version>
+            <version>2.20.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.16</version>
+            <version>1.18.28</version>
             <scope>compile</scope>
         </dependency>
 
@@ -66,7 +66,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.8.0</version>
+            <version>2.11.0</version>
         </dependency>
 
         <!-- Testing -->
@@ -94,14 +94,25 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.10.9</version>
+            <version>2.12.5</version>
         </dependency>
 
         <!-- Amazon SDK -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.11.931</version>
+            <version>1.12.471</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.ion</groupId>
+                    <artifactId>ion-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>1.12.471</version>
         </dependency>
     </dependencies>
 
@@ -111,7 +122,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -135,7 +146,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>2.1</version>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>

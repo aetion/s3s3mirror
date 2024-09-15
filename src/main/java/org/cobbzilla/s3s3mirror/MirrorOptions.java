@@ -18,6 +18,7 @@ import org.kohsuke.args4j.Option;
 
 import java.io.File;
 import java.util.Date;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.cobbzilla.s3s3mirror.MirrorConstants.GB;
@@ -124,6 +125,18 @@ public class MirrorOptions implements AWSCredentials {
 
     public boolean hasEndpoint () { return endpoint != null && endpoint.trim().length() > 0; }
 
+    public static final String AWS_USE_PATH_STYLE_ENDPOINT = "AWS_USE_PATH_STYLE_ENDPOINT";
+
+    public static final String USAGE_PATH_STYLE = "Access AWS endpoint using path style";
+    public static final String OPT_PATH_STYLE = "-pa";
+    public static final String LONGOPT_PATH_STYLE = "--path-style-access";
+    @Option(name=OPT_PATH_STYLE, aliases=LONGOPT_PATH_STYLE, usage=USAGE_PATH_STYLE)
+    @Getter @Setter private boolean pathStyleAccess = Optional.ofNullable(System.getenv(AWS_USE_PATH_STYLE_ENDPOINT))
+                        .map(Boolean::valueOf)
+                        .orElse(false);
+
+    public boolean hasPathStyleAccess () { return pathStyleAccess; }
+
     public static final String USAGE_MAX_CONNECTIONS = "Maximum number of connections to S3 (default 100)";
     public static final String OPT_MAX_CONNECTIONS = "-m";
     public static final String LONGOPT_MAX_CONNECTIONS = "--max-connections";
@@ -152,6 +165,26 @@ public class MirrorOptions implements AWSCredentials {
     @Option(name=OPT_CTIME, aliases=LONGOPT_CTIME, usage=USAGE_CTIME)
     @Getter @Setter private String ctime = null;
     public boolean hasCtime() { return ctime != null; }
+
+    public static final String USAGE_WRITE_STATS = "Writes s3 usage stats to the specified file in json format";
+    public static final String OPT_WRITE_STATS = "-ws";
+    public static final String LONGOPT_WRITE_STATS = "--write-stats";
+    @Option(name=OPT_WRITE_STATS, aliases=LONGOPT_WRITE_STATS, usage=USAGE_WRITE_STATS)
+    @Getter @Setter private File writeStats = null;
+    public Optional<File> writeStats() { return Optional.ofNullable(writeStats); }
+
+    public static final String USAGE_INTELLIGENT_TIERING_RESTORE = "When enabled, if any of source keys with " +
+            "intelligent tiering enabled is archived, we will restore it and report in stats. " +
+            "Effectively having non 0 stats for restore means your sync was not 100% done, and restore was initiated. " +
+            "You should retry in some time and check if restore get down to 0. If not retry again in some time.";
+    public static final String OPT_INTELLIGENT_TIERING_RESTORE = "-itr";
+    public static final String LONGOPT_INTELLIGENT_TIERING_RESTORE = "--intelligent-tiering-restore";
+    @Option(
+            name=OPT_INTELLIGENT_TIERING_RESTORE,
+            aliases=LONGOPT_INTELLIGENT_TIERING_RESTORE,
+            usage=USAGE_INTELLIGENT_TIERING_RESTORE)
+    @Getter @Setter private boolean intelligentTieringRestore = false;
+    public boolean intelligentTieringRestore() { return intelligentTieringRestore; }
 
     private static final String PROXY_USAGE = "host:port of proxy server to use. " +
             "Defaults to proxy_host and proxy_port defined in ~/.s3cfg, or no proxy if these values are not found in ~/.s3cfg";
@@ -334,20 +367,25 @@ public class MirrorOptions implements AWSCredentials {
             } else if (slashPos != -1) {
                 // this is for S3, in the form "bucket/prefix"
                 bucket = scrubbed.substring(0, slashPos);
-                if (slashPos < scrubbed.length()-1) {
-                    prefix = pfx == null || pfx.trim().isEmpty()
-                            ? scrubbed.substring(slashPos+1)
-                            : scrubbed.substring(slashPos+1) + pfx;
-                } else {
-                    prefix = pfx;
+                prefix = scrubbed.substring(slashPos+1);
+                if(pfx != null && !pfx.trim().isEmpty()){
+                    pfx = pfx.startsWith(slash) ? pfx.substring(slash.length()): pfx;
+                    if(prefix.endsWith(slash)){
+                        prefix = prefix + pfx;
+                    }else {
+                        prefix = prefix + slash + pfx;
+                    }
                 }
-
             } else {
                 bucket = scrubbed;
                 prefix = pfx;
             }
-
-            if (prefix != null && prefix.trim().length() == 0) prefix = null;
+            if(prefix != null && prefix.endsWith(slash)){
+                prefix = prefix.substring(0, prefix.length()-slash.length());
+            }
+            if(prefix != null && prefix.trim().isEmpty()) {
+                prefix = null;
+            }
         }
 
         private int slashPos(String scrubbed) {

@@ -36,11 +36,11 @@ public class S3MultipartUploadJob extends S3KeyUploadJob {
         final List<PartETag> partETags = new ArrayList<PartETag>();
         final MirrorOptions options = context.getOptions();
         final String destBucket = options.getDestinationBucket();
-        final String keydest = getKeyDestination();
+        final String keydest = getDestination();
 
         // Step 1: Initialize.
         final InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(
-                options.getDestinationBucket(), getKeyDestination());
+                options.getDestinationBucket(), getDestination());
         final InitiateMultipartUploadResult initResponse = s3client.initiateMultipartUpload(initRequest);
         options.apply(initRequest);
 

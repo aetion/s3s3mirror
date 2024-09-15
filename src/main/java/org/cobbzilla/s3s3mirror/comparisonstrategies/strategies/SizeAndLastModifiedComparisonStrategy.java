@@ -8,6 +8,7 @@ public class SizeAndLastModifiedComparisonStrategy extends SizeOnlyComparisonStr
     @Override
     public boolean sourceDifferent(FileSummary source, FileSummary destination) {
         if (super.sourceDifferent(source, destination)) {
+            log.info("sourceDifferent: size differs for " + source.getKey() + " requesting sync");
             return true;
         }
 
@@ -15,6 +16,14 @@ public class SizeAndLastModifiedComparisonStrategy extends SizeOnlyComparisonStr
             log.warn("Unable to get last modified datetime for source or destination for: " + source.getKey() + " requesting sync");
             return true;
         }
-        return source.getLastModified() > destination.getLastModified();
+
+        if (source.getLastModified() > destination.getLastModified()) {
+            log.info("sourceDifferent: source last modified " + source.getLastModified()
+                    + " is newer for " + source.getKey() + " than " +
+                    "dest last modified " + destination.getLastModified() +  " requesting sync");
+            return true;
+        }
+
+        return false;
     }
 }

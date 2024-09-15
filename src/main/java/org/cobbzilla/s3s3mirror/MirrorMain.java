@@ -4,10 +4,12 @@ import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Cleanup;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.cobbzilla.s3s3mirror.stats.MirrorStats;
 import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.BufferedReader;
@@ -45,7 +47,25 @@ public class MirrorMain {
 
     public void run() {
         init();
-        master.mirror();
+        MirrorStats stats = master.mirror();
+        options.writeStats()
+                .ifPresent(f -> writeStatistics(f, stats));
+        if(stats.listingsErrors.get() > 0
+                || stats.deleteErrors.get() > 0
+                || stats.copyErrors.get() > 0){
+            System.exit(1);
+        }
+    }
+
+    private static void writeStatistics(File output, MirrorStats stats) {
+        try {
+            if(output.exists()) {
+                output.delete();
+            }
+            new ObjectMapper().writeValue(output, stats.asStatsMap());
+        } catch (Exception e) {
+            log.error("Error writing statistics", e);
+        }
     }
 
     public void init() {
@@ -68,10 +88,13 @@ public class MirrorMain {
 
     protected void parseArguments() throws Exception {
         parser.parseArgument(args);
-        if (!options.hasAwsKeys()) {
-            // try to load from ~/.s3cfg
+        AWSCredentialsProviderChain awsCredentialProviders;
+
+        // try to load from ~/.s3cfg
+        File s3CfgFile = new File(System.getProperty("user.home") + File.separator + ".s3cfg");
+        if (s3CfgFile.exists()) {
             try {
-                @Cleanup BufferedReader reader = new BufferedReader(new FileReader(System.getProperty("user.home") + File.separator + ".s3cfg"));
+                @Cleanup BufferedReader reader = new BufferedReader(new FileReader(s3CfgFile));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if (line.trim().startsWith("access_key")) {
@@ -84,20 +107,20 @@ public class MirrorMain {
                         options.setProxyPort(Integer.parseInt(line.substring(line.indexOf("=") + 1).trim()));
                     }
                 }
-                options.setAwsCredentialProviders(new AWSCredentialsProviderChain(new AWSStaticCredentialsProvider(new BasicAWSCredentials(options.getAWSAccessKeyId(), options.getAWSSecretKey()))));
+                awsCredentialProviders = new AWSCredentialsProviderChain(new AWSStaticCredentialsProvider(new BasicAWSCredentials(options.getAWSAccessKeyId(), options.getAWSSecretKey())));
+                options.setAwsCredentialProviders(awsCredentialProviders);
                 log.info("Using s3cfg credentials");
             } catch (Exception e) {
                 // likely file not found, so log at debug and continue to try default aws creds next
-                log.debug("Could not load credentials from ~/.s3cfg", e);
+                throw new IllegalStateException("Could not load credentials from ~/.s3cfg", e);
             }
-        }
-        if (!options.hasAwsKeys()) {
+        } else {
             // try to load creds from env vars, system properties, profiles, or EC2 instance profile
-            options.setAwsCredentialProviders(new DefaultAWSCredentialsProviderChain());
-            if (options.getAwsCredentialProviders().getCredentials() == null)
-                throw new IllegalStateException("ENV vars not defined: " + MirrorOptions.AWS_ACCESS_KEY + " and/or " + MirrorOptions.AWS_SECRET_KEY);
             log.info("Using aws default credential provider");
+            awsCredentialProviders = new DefaultAWSCredentialsProviderChain();
         }
+
+        options.setAwsCredentialProviders(awsCredentialProviders);
         options.initDerivedFields();
     }
 
